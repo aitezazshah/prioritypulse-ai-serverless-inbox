@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PriorityPulse AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0e12;
+      --bg-card: #15171e;
+      --bg-card-hover: #1a1c24;
+      --border: rgba(255, 255, 255, 0.07);
+      --border-focus: rgba(99, 179, 237, 0.35);
+      --text: #e8eaed;
+      --text-muted: #9aa0a6;
+      --text-dim: #5f6368;
+      --accent: #5b9eed;
+      --accent-soft: rgba(91, 158, 237, 0.12);
+      --danger: #ea4335;
+      --danger-soft: rgba(234, 67, 53, 0.12);
+      --ok: #34a853;
+      --ok-soft: rgba(52, 168, 83, 0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+      --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.32);
+      --glass: rgba(255, 255, 255, 0.03);
+      --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 50% at 50% -10%, rgba(91, 158, 237, 0.06) 0%, transparent 55%);
+      pointer-events: none;
+      z-index: -1;
+    }
+    .dashboard {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 0;
+    }
+    .sidebar-logo {
+      padding: 0 1.25rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.25rem;
+    }
+    .sidebar-logo span {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    .sidebar-nav {
+      padding: 0 0.75rem;
+    }
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0.75rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      margin-bottom: 0.25rem;
+      transition: background 0.2s, color 0.2s;
+    }
+    .sidebar-nav a:hover { background: var(--glass); color: var(--text); }
+    .sidebar-nav a.active { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+    .main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      padding: 1.25rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .topbar h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+    }
+    .topbar p {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+    .page {
+      flex: 1;
+      padding: 1.5rem 2rem;
+    }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+    }
+    .stat-card .label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.35rem;
+    }
+    .stat-card .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-card.urgent .value { color: var(--danger); }
+    .stat-card.standard .value { color: var(--ok); }
+    .workflow-ribbon {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 1.5rem;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+    .workflow-ribbon .arrow { color: var(--accent); opacity: 0.8; margin: 0 0.1rem; }
+    .container { display: grid; gap: 1.5rem; }
+    @media (min-width: 900px) { .container { grid-template-columns: 1.2fr 1fr; } }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.75rem;
+      box-shadow: var(--shadow);
+      transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+    }
+    .card:hover {
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: var(--shadow-hover);
+    }
+    .section-title {
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .small {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+    .small code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      padding: 0.15rem 0.4rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .queue-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+    .queue-title:first-of-type { margin-top: 0.75rem; }
+    .queue-title .label {
+      font-weight: 600;
+      font-size: 0.8125rem;
+      color: var(--text);
+    }
+    .dot-red, .dot-green {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-red { background: var(--danger); }
+    .dot-green { background: var(--ok); }
+    .msg-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .msg-card {
+      border: 1px solid var(--border);
+      border-left: 3px solid transparent;
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.25rem;
+      background: var(--glass);
+      transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
+    }
+    .msg-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 255, 255, 0.06);
+    }
+    .msg-card.high { border-left-color: var(--danger); }
+    .msg-card.normal { border-left-color: var(--ok); }
+    .msg-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .msg-name {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text);
+    }
+    .badge {
+      font-size: 0.625rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      flex-shrink: 0;
+    }
+    .msg-card .badge {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .msg-card.high .badge { background: var(--danger-soft); color: var(--danger); }
+    .msg-card.normal .badge { background: var(--ok-soft); color: var(--ok); }
+    .score-line {
+      font-size: 0.6875rem;
+      margin-top: 0.5rem;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .time-line {
+      font-size: 0.6875rem;
+      color: var(--text-dim);
+      margin-top: 0.35rem;
+      opacity: 0.9;
+    }
+    .right-col .card { height: 100%; }
+    #statusText {
+      display: inline-block;
+      padding: 0.5rem 0.875rem;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+    .services {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      margin-top: 0.5rem;
+    }
+    .services li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .services li:last-child { border-bottom: none; }
+    .services li::before {
+      content: '';
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--ok);
+      flex-shrink: 0;
+    }
+    .info-box {
+      margin-top: 0.75rem;
+      padding: 1rem 1.25rem;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    @media (max-width: 768px) {
+      .dashboard { flex-direction: column; }
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      .sidebar-logo { padding: 0; border: none; margin: 0; }
+      .sidebar-nav { display: flex; gap: 0.5rem; padding: 0; }
+      .stats-row { grid-template-columns: 1fr; }
+      .page { padding: 1rem; }
+      .topbar { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span>PriorityPulse AI</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="active">Dashboard</a>
+        <a href="#">Inbox</a>
+        <a href="#">Analytics</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <h1>Dashboard</h1>
+        <p>Customer messages sorted by sentiment in real time</p>
+      </div>
+
+      <div class="page">
+        <div class="stats-row">
+          <div class="stat-card urgent">
+            <div class="label">Urgent</div>
+            <div class="value" id="urgentCount">—</div>
+          </div>
+          <div class="stat-card standard">
+            <div class="label">Standard</div>
+            <div class="value" id="standardCount">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Total Messages</div>
+            <div class="value" id="totalCount">—</div>
+          </div>
+        </div>
+
+        <div class="workflow-ribbon">
+          Incoming <span class="arrow">→</span> Process <span class="arrow">→</span> Analyze <span class="arrow">→</span> Route
+        </div>
+
+        <div class="container">
+      <div class="card">
+        <div class="section-title">Live Feed</div>
+        <p class="small" style="margin-bottom:.6rem;">Messages are automatically analyzed and sorted by priority.</p>
+
+        <div class="queue-title" style="margin-top:.75rem; margin-bottom:.35rem;">
+          <span class="dot-red"></span>
+          <span class="label">Urgent</span>
+        </div>
+        <div id="highList" class="msg-list">
+          <p class="small">Waiting for messages...</p>
+        </div>
+
+        <div class="queue-title" style="margin-top:1rem; margin-bottom:.35rem;">
+          <span class="dot-green"></span>
+          <span class="label">Standard</span>
+        </div>
+        <div id="normalList" class="msg-list">
+          <p class="small">Waiting for messages...</p>
+        </div>
+      </div>
+
+      <div class="right-col">
+        <div class="card">
+          <div class="section-title">Status</div>
+          <span id="statusText">Connecting...</span>
+
+          <div class="section-title" style="margin-top:1.25rem;">Features</div>
+          <ul class="services">
+            <li>AI sentiment analysis</li>
+            <li>Priority-based routing</li>
+            <li>Real-time updates</li>
+          </ul>
+
+          <div class="section-title" style="margin-top:1.25rem;">How it works</div>
+          <div class="info-box">New messages appear here automatically as they are processed and sorted.</div>
+        </div>
+      </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // put your API Gateway base URL WITHOUT the /results at the end
+    // example: const API_BASE = "https://abc123xyz.execute-api.us-east-1.amazonaws.com";
+    const API_BASE = "{API FOR RESULTS}";
+
+    const highList = document.getElementById("highList");
+    const normalList = document.getElementById("normalList");
+    const statusText = document.getElementById("statusText");
+    const urgentCount = document.getElementById("urgentCount");
+    const standardCount = document.getElementById("standardCount");
+    const totalCount = document.getElementById("totalCount");
+
+    async function fetchResults() {
+      try {
+        const res = await fetch(`${API_BASE}/results`);
+        const data = await res.json();
+
+        statusText.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+
+        // separate high vs normal
+        const high = data.filter(m => m.queue === "HighPriorityQueue");
+        const normal = data.filter(m => m.queue === "NormalQueue");
+
+        if (urgentCount) urgentCount.textContent = high.length;
+        if (standardCount) standardCount.textContent = normal.length;
+        if (totalCount) totalCount.textContent = high.length + normal.length;
+
+        renderList(highList, high, true);
+        renderList(normalList, normal, false);
+
+      } catch (err) {
+        console.error(err);
+        statusText.textContent = "Unable to connect. Please try again.";
+      }
+    }
+
+    function renderList(container, items, isHigh) {
+      container.innerHTML = "";
+      if (!items || items.length === 0) {
+        container.innerHTML = '<p class="small">No messages found.</p>';
+        return;
+      }
+
+      items.forEach(it => {
+        const scores = it.scores || {};
+        const div = document.createElement("div");
+        div.className = `msg-card ${isHigh ? 'high' : 'normal'}`;
+        div.innerHTML = `
+          <div class="msg-top">
+            <div class="msg-name">${(it.s3_key || 'Message')}</div>
+            <span class="badge">${it.sentiment || 'UNKNOWN'}</span>
+          </div>
+          <div class="small" style="margin-top:.25rem;">${(it.preview || '').slice(0, 140) || 'No preview available.'}</div>
+          <div class="score-line">
+            Positive ${(scores.positive*100 || 0).toFixed(1)}% ·
+            Negative ${(scores.negative*100 || 0).toFixed(1)}% ·
+            Neutral ${(scores.neutral*100 || 0).toFixed(1)}%
+          </div>
+          <div class="time-line">${it.timestamp || ''}</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // first load and poll every 5s
+    fetchResults();
+    setInterval(fetchResults, 5000);
+  </script>
+</body>
+</html>
